@@ -10,6 +10,8 @@ if (!isset($_SESSION)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#667eea">
+    <link rel="manifest" href="manifest.json">
+    <script src="app.js" defer></script>
     <title>Şantiye Yönetimi</title>
 
     <!-- Bootstrap CSS -->
@@ -73,6 +75,8 @@ if (!isset($_SESSION)) {
     </style>
 </head>
 <body>
+
+<div id="offlineBadge" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#f59f00; color:white; padding:8px 20px; border-radius:20px; font-size:0.82rem; font-weight:700; z-index:9999; box-shadow:0 4px 15px rgba(0,0,0,0.2);"></div>
 
 <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
     <div class="container-fluid">
