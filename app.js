@@ -1,6 +1,7 @@
-const DB_NAME = 'santiye_offline';
-const DB_VERSION = 1;
+const DB_NAME    = 'santiye_offline';
+const DB_VERSION = 2;
 const STORE_NAME = 'queue';
+const CACHE_STORE = 'api_cache';
 
 function dbAc() {
   return new Promise((resolve, reject) => {
@@ -9,6 +10,9 @@ function dbAc() {
       const db = e.target.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+      }
+      if (!db.objectStoreNames.contains(CACHE_STORE)) {
+        db.createObjectStore(CACHE_STORE, { keyPath: 'key' });
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -21,6 +25,45 @@ async function kuyrugaEkle(url, data) {
   const tx = db.transaction(STORE_NAME, 'readwrite');
   tx.objectStore(STORE_NAME).add({ url, data, zaman: Date.now() });
   console.log('Offline kuyruga eklendi:', data);
+}
+
+async function apiCacheKaydet(key, data) {
+  try {
+    const db = await dbAc();
+    const tx = db.transaction(CACHE_STORE, 'readwrite');
+    tx.objectStore(CACHE_STORE).put({ key, data, zaman: Date.now() });
+  } catch(e) {}
+}
+
+async function apiCacheOku(key) {
+  try {
+    const db = await dbAc();
+    const tx = db.transaction(CACHE_STORE, 'readonly');
+    return await new Promise((res, rej) => {
+      const r = tx.objectStore(CACHE_STORE).get(key);
+      r.onsuccess = () => res(r.result ? r.result.data : null);
+      r.onerror = () => rej(null);
+    });
+  } catch(e) { return null; }
+}
+
+async function veriCek(url) {
+  if (navigator.onLine) {
+    try {
+      const res = await fetch(url);
+      const json = await res.json();
+      if (json.status === 'success') {
+        await apiCacheKaydet(url, json.data);
+        return json.data;
+      }
+    } catch(e) {}
+  }
+  const cached = await apiCacheOku(url);
+  if (cached) {
+    gosterBildirim('Cevrimdisi mod - Son kaydedilen veriler gosteriliyor', 'warning');
+    return cached;
+  }
+  return [];
 }
 
 async function syncYap() {
@@ -121,7 +164,7 @@ function gosterBildirim(mesaj, tip) {
   if (!div) {
     div = document.createElement('div');
     div.id = 'pwaBildirim';
-    div.style.cssText = 'position:fixed;top:70px;right:15px;z-index:9999;padding:12px 20px;border-radius:12px;font-size:0.85rem;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,0.2);transition:all 0.3s;max-width:320px;';
+    div.style.cssText = 'position:fixed;top:70px;right:15px;z-index:9999;padding:12px 20px;border-radius:12px;font-size:0.85rem;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,0.2);transition:all 0.3s;';
     document.body.appendChild(div);
   }
   div.textContent = mesaj;
@@ -134,4 +177,11 @@ function gosterBildirim(mesaj, tip) {
 document.addEventListener('DOMContentLoaded', () => {
   bekleyenSayisiGoster();
   if (navigator.onLine) syncYap();
+
+  if (navigator.onLine) {
+    veriCek('./api.php?action=malzemeler');
+    veriCek('./api.php?action=araclar');
+    veriCek('./api.php?action=kategoriler');
+    veriCek('./api.php?action=lokasyonlar');
+  }
 });
