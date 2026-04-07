@@ -497,8 +497,6 @@ body {
 </style>
 </head>
 <body>
-
-<script src="app.js"></script>
 <?php include "header.php"; ?>
 
 <!-- ══════════ HERO ══════════ -->
@@ -857,16 +855,6 @@ const scrollHint = document.querySelector('.scroll-hint');
 if(scrollWrap && scrollHint){
     scrollWrap.addEventListener('scroll',()=>{ scrollHint.style.display='none'; },{once:true});
     setTimeout(()=>{ if(scrollHint){ scrollHint.style.opacity='0'; setTimeout(()=>scrollHint.style.display='none',500); } },4000);
-}
-</script>
-
-<script>
-if('serviceWorker' in navigator){
-    window.addEventListener('load',()=>{
-        navigator.serviceWorker.register('service-worker-v2.js')
-            .then(()=>console.log('✅ SW kayıtlı'))
-            .catch(e=>console.error('SW hata:',e));
-    });
 }
 </script>
 </body>
