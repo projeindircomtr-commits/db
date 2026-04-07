@@ -1,4 +1,6 @@
-const CACHE_NAME = 'santiye-v1';
+const CACHE_NAME = 'santiye-v2';
+const API_CACHE  = 'santiye-api-v2';
+
 const OFFLINE_URLS = [
   './',
   './index.php',
@@ -7,9 +9,20 @@ const OFFLINE_URLS = [
   './araclar.php',
   './arac_ekle.php',
   './dashboard.php',
+  './kategoriler.php',
+  './lokasyon.php',
+  './app.js',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
   'https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js'
+];
+
+// API URL'leri - bunlar cache'lenecek
+const API_URLS = [
+  './api.php?action=malzemeler',
+  './api.php?action=araclar',
+  './api.php?action=kategoriler',
+  './api.php?action=lokasyonlar'
 ];
 
 // Kurulum
@@ -24,15 +37,37 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(
+        keys.filter(k => k !== CACHE_NAME && k !== API_CACHE)
+            .map(k => caches.delete(k))
+      )
     )
   );
   self.clients.claim();
 });
 
-// Fetch - once cache, yoksa network
+// Fetch
 self.addEventListener('fetch', e => {
+  const url = e.request.url;
+
+  // POST isteklerini atlat
   if (e.request.method !== 'GET') return;
+
+  // API istekleri - Network first, cache fallback
+  if (url.includes('api.php')) {
+    e.respondWith(
+      fetch(e.request)
+        .then(response => {
+          const copy = response.clone();
+          caches.open(API_CACHE).then(cache => cache.put(e.request, copy));
+          return response;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Diger istekler - Cache first, network fallback
   e.respondWith(
     caches.match(e.request).then(cached => {
       return cached || fetch(e.request).then(response => {
@@ -44,7 +79,7 @@ self.addEventListener('fetch', e => {
   );
 });
 
-// Background Sync - offline kuyruk
+// Background Sync
 self.addEventListener('sync', e => {
   if (e.tag === 'offline-sync') {
     e.waitUntil(syncOfflineData());
