@@ -375,7 +375,6 @@ $sehirler = ['Istanbul','Ankara','Izmir','Antalya','Bursa','Adana','Trabzon'];
     </div>
 </footer>
 
-<script src="app.js"></script>
 <script>
 // Canlı saat
 function saatGuncelle(){
