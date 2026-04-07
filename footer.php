@@ -387,12 +387,4 @@ function saatGuncelle(){
 }
 setInterval(saatGuncelle, 1000);
 
-// Service Worker
-if('serviceWorker' in navigator){
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('service-worker-v2.js')
-            .then(()  => console.log('✅ Service Worker kaydedildi'))
-            .catch(e  => console.error('SW hata:', e));
-    });
-}
 </script>
